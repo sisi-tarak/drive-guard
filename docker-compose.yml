@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    working_dir: /app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./requirements.txt:/app/requirements.txt
+    env_file:
+      - backend/.env
+    environment:
+      - FRONTEND_URL=http://localhost:5173
+      - OAUTH_REDIRECT_URI=http://localhost:8000/api/auth/callback
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
