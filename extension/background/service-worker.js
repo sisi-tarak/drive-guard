@@ -1,6 +1,7 @@
 /* ── DriveGuard Service Worker ── */
 
-const DEFAULT_API = "http://127.0.0.1:8000/api";
+const DEFAULT_API =
+  "http://127.0.0.1:8000/api || https://drive-guard.onrender.com/api";
 
 // ── Install: context menu + alarms ───────────────────────────────────────
 chrome.runtime.onInstalled.addListener(async () => {
@@ -12,14 +13,14 @@ chrome.runtime.onInstalled.addListener(async () => {
       "https://drive.google.com/*",
       "https://docs.google.com/*",
       "https://sheets.google.com/*",
-      "https://slides.google.com/*"
-    ]
+      "https://slides.google.com/*",
+    ],
   });
 
   chrome.contextMenus.create({
     id: "dg-open",
     title: "Open DriveGuard",
-    contexts: ["action"]
+    contexts: ["action"],
   });
 
   // Schedule periodic scan every 60 minutes
@@ -40,14 +41,25 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
     const local = await chrome.storage.local.get("lastScan");
     if (local.lastScan && local.lastScan.files) {
-      const match = local.lastScan.files.find(f => f.id === fileId || (f.link && f.link.includes(fileId)));
+      const match = local.lastScan.files.find(
+        (f) => f.id === fileId || (f.link && f.link.includes(fileId)),
+      );
       if (match) {
-        notify("DriveGuard — Exposed!", `"${match.name}" is publicly accessible. Risk: ${match.risk.toUpperCase()}`);
+        notify(
+          "DriveGuard — Exposed!",
+          `"${match.name}" is publicly accessible. Risk: ${match.risk.toUpperCase()}`,
+        );
       } else {
-        notify("DriveGuard — Safe", "This file was not found in the last leaked-link scan. Run a new scan to be sure.");
+        notify(
+          "DriveGuard — Safe",
+          "This file was not found in the last leaked-link scan. Run a new scan to be sure.",
+        );
       }
     } else {
-      notify("DriveGuard", "No scan data yet. Open DriveGuard and run a security scan first.");
+      notify(
+        "DriveGuard",
+        "No scan data yet. Open DriveGuard and run a security scan first.",
+      );
     }
   }
 });
@@ -58,11 +70,15 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
   const api = await getApi();
   try {
-    const res = await fetch(`${api}/auth/status`, { signal: AbortSignal.timeout(5000) });
+    const res = await fetch(`${api}/auth/status`, {
+      signal: AbortSignal.timeout(5000),
+    });
     const status = await res.json();
     if (!status.connected) return; // not signed in, skip
 
-    const scanRes = await fetch(`${api}/leaked/scan`, { signal: AbortSignal.timeout(30000) });
+    const scanRes = await fetch(`${api}/leaked/scan`, {
+      signal: AbortSignal.timeout(30000),
+    });
     if (!scanRes.ok) return;
     const data = await scanRes.json();
 
@@ -70,7 +86,11 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     const prevCount = prev.lastScan ? prev.lastScan.count : 0;
 
     await chrome.storage.local.set({
-      lastScan: { count: data.leaked_count, files: data.files, timestamp: Date.now() }
+      lastScan: {
+        count: data.leaked_count,
+        files: data.files,
+        timestamp: Date.now(),
+      },
     });
 
     await setBadge(data.leaked_count);
@@ -80,10 +100,12 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
       const newCount = data.leaked_count - prevCount;
       notify(
         "DriveGuard — New Exposure!",
-        `${newCount} new file${newCount > 1 ? "s" : ""} found with public sharing. Open DriveGuard to review.`
+        `${newCount} new file${newCount > 1 ? "s" : ""} found with public sharing. Open DriveGuard to review.`,
       );
     }
-  } catch { /* network unreachable or server down — silently skip */ }
+  } catch {
+    /* network unreachable or server down — silently skip */
+  }
 });
 
 // ── Message from popup ────────────────────────────────────────────────────
@@ -120,7 +142,7 @@ function notify(title, message) {
     iconUrl: "../icons/icon48.png",
     title,
     message,
-    priority: 1
+    priority: 1,
   });
 }
 
@@ -128,7 +150,7 @@ function extractDriveFileId(url) {
   const patterns = [
     /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/,
     /docs\.google\.com\/[a-z]+\/d\/([a-zA-Z0-9_-]+)/,
-    /id=([a-zA-Z0-9_-]+)/
+    /id=([a-zA-Z0-9_-]+)/,
   ];
   for (const re of patterns) {
     const m = url.match(re);
