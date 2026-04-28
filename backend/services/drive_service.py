@@ -68,3 +68,25 @@ def get_all_images(service):
             break
 
     return images
+
+def get_images_in_folder(service, folder_id: str):
+    """Get image files that are direct children of the given folder."""
+    images = []
+    page_token = None
+    q = f"'{folder_id}' in parents and mimeType contains 'image/' and trashed = false"
+
+    while True:
+        response = service.files().list(
+            q=q,
+            pageSize=100,
+            fields="nextPageToken, files(id, name, mimeType, size, thumbnailLink, webViewLink)",
+            pageToken=page_token
+        ).execute()
+
+        images.extend(response.get("files", []))
+        page_token = response.get("nextPageToken")
+
+        if not page_token:
+            break
+
+    return images

@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["python311", "python311Packages.pip", "libGL", "libGLU", "glib"]
+
+[phases.install]
+cmds = [
+  "pip install -r backend/requirements.txt",
+  "python -m spacy download en_core_web_lg"
+]
+
+[start]
+cmd = "cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT"

@@ -304,6 +304,65 @@ document.getElementById("faceSearchBtn").addEventListener("click", async () => {
   }
 });
 
+// ── Folder Search Tab ──────────────────────────────────────────────────────
+setupDropZone("folderDropZone", "folderFaceInput", "folderPreview", "folderPreviewImg", "folderSearchBtn");
+
+document.getElementById("folderSearchBtn").addEventListener("click", async () => {
+  const url = document.getElementById("folderUrl").value.trim();
+  const input = document.getElementById("folderFaceInput");
+  if (!url || !input.files[0]) {
+    showError("folderError", "Please provide a Drive folder link and a face photo.");
+    return;
+  }
+
+  const errEl = document.getElementById("folderError");
+  errEl.classList.add("hidden");
+  document.getElementById("folderResults").innerHTML = "";
+  toggleEl("folderSpinner", true);
+  document.getElementById("folderSearchBtn").disabled = true;
+
+  try {
+    const fd = new FormData();
+    fd.append("file", input.files[0]);
+    fd.append("folder_url", url);
+    const res = await fetch(`${API}/face/search-in-folder`, { method: "POST", body: fd, signal: AbortSignal.timeout(120000) });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: `Server error ${res.status}` }));
+      throw new Error(err.detail || `Server error ${res.status}`);
+    }
+    const data = await res.json();
+    renderFolderResults("folderResults", data.matches || [], data.folder_images_checked || 0);
+  } catch (e) {
+    showError("folderError", e.message);
+  } finally {
+    toggleEl("folderSpinner", false);
+    document.getElementById("folderSearchBtn").disabled = false;
+  }
+});
+
+function renderFolderResults(containerId, matches, checked) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = "";
+  if (!matches.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">👤</div><p>No matching faces found in that folder (${checked} photos checked).</p></div>`;
+    return;
+  }
+  matches.forEach(m => {
+    const div = document.createElement("div");
+    div.className = "list-item";
+    div.innerHTML = `
+      <div class="list-item-header">
+        <span class="list-item-name">${escHtml(m.file_name)}</span>
+        <span class="risk-badge" style="background:#eef2ff;color:#4f46e5;border:1px solid #c7d2fe">${(m.similarity_score * 100).toFixed(1)}%</span>
+      </div>
+      <div class="list-item-actions">
+        <a class="action-link" href="${escHtml(m.drive_link)}" target="_blank">View ↗</a>
+        <a class="action-link" href="${API}/drive/download/${escHtml(m.file_id)}" target="_blank" download>⬇ Download</a>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
 // ── PII Scan Tab ───────────────────────────────────────────────────────────
 document.getElementById("scanPiiBtn").addEventListener("click", () => runPiiScan(false));
 

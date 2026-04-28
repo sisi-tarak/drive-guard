@@ -3,24 +3,31 @@ from transformers import CLIPProcessor, CLIPModel
 import torch
 from io import BytesIO
 
-print("Loading CLIP model... (first time takes 1-2 minutes)")
-model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
-print("CLIP model loaded!")
+_model = None
+_processor = None
+
+def _load_model():
+    global _model, _processor
+    if _model is None:
+        print("Loading CLIP model... (first time takes 1-2 minutes)")
+        _model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+        _processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        print("CLIP model loaded!")
+    return _model, _processor
 
 def get_image_embedding(image):
+    model, processor = _load_model()
     inputs = processor(images=image, return_tensors="pt")
     with torch.no_grad():
-        outputs = model(**inputs, input_ids=torch.zeros(1, 1, dtype=torch.long))
-        embedding = outputs.image_embeds
+        embedding = model.get_image_features(**inputs)
     embedding = embedding / embedding.norm(dim=-1, keepdim=True)
     return embedding.squeeze().tolist()
 
 def get_text_embedding(text):
-    inputs = processor(text=[text], images=None, return_tensors="pt", padding=True)
+    model, processor = _load_model()
+    inputs = processor(text=[text], return_tensors="pt", padding=True)
     with torch.no_grad():
-        outputs = model(**inputs, pixel_values=torch.zeros(1, 3, 224, 224))
-        embedding = outputs.text_embeds
+        embedding = model.get_text_features(**inputs)
     embedding = embedding / embedding.norm(dim=-1, keepdim=True)
     return embedding.squeeze().tolist()
 
@@ -33,4 +40,3 @@ def download_drive_image(file_id, service):
     except Exception as e:
         print(f"Could not download image {file_id}: {e}")
         return None
-    

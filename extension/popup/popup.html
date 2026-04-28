@@ -48,6 +48,7 @@
       <button class="tab-btn" data-tab="image">Image</button>
       <button class="tab-btn" data-tab="text">Text</button>
       <button class="tab-btn" data-tab="face">Face</button>
+      <button class="tab-btn" data-tab="folder">Folder</button>
       <button class="tab-btn" data-tab="pii">PII</button>
     </nav>
 
@@ -164,6 +165,27 @@
       <div id="faceSpinner" class="center-spinner hidden"><span class="spinner"></span></div>
       <div id="faceError" class="error-banner hidden"></div>
       <div id="faceResults" class="results-grid"></div>
+    </div>
+
+    <!-- ── FOLDER SEARCH TAB ── -->
+    <div id="tab-folder" class="tab-panel hidden">
+      <div class="tab-header">
+        <h2 class="tab-title">Find in Folder</h2>
+      </div>
+      <p style="color:#666;font-size:12px;margin:0 0 10px;">Paste a Drive folder link and upload your face photo to find matching photos in that folder.</p>
+      <input id="folderUrl" type="text" placeholder="https://drive.google.com/drive/folders/..." class="search-input" style="margin-bottom:10px;" />
+      <div id="folderDropZone" class="drop-zone">
+        <div class="drop-icon">👤</div>
+        <p class="drop-text">Drop your face photo or click to browse</p>
+        <input id="folderFaceInput" type="file" accept="image/*" class="hidden" />
+      </div>
+      <div id="folderPreview" class="preview-img-wrap hidden">
+        <img id="folderPreviewImg" src="" alt="preview" class="preview-img" />
+      </div>
+      <button id="folderSearchBtn" class="btn btn-primary btn-full" style="margin-top:10px;">Search Folder</button>
+      <div id="folderSpinner" class="center-spinner hidden"><span class="spinner"></span></div>
+      <div id="folderError" class="error-banner hidden"></div>
+      <div id="folderResults" class="results-list"></div>
     </div>
 
     <!-- ── PII SCAN TAB ── -->

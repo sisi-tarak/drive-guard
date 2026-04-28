@@ -1,0 +1,36 @@
+# ── Web framework ──────────────────────────────────────────────────────────
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
+python-multipart>=0.0.9
+python-dotenv>=1.0.0
+httpx>=0.24.0
+requests>=2.28.0
+Pillow>=10.0.0
+
+# ── Google APIs ─────────────────────────────────────────────────────────────
+google-api-python-client>=2.100.0
+google-auth-oauthlib>=1.1.0
+google-auth-httplib2>=0.2.0
+google-generativeai>=0.5.0
+
+# ── Vector database ─────────────────────────────────────────────────────────
+pinecone>=3.0.0
+
+# ── AI / ML (CLIP image + text embeddings) ──────────────────────────────────
+torch>=2.0.0
+torchvision>=0.15.0
+transformers>=4.30.0
+sentence-transformers>=2.2.0
+
+# ── Face recognition ────────────────────────────────────────────────────────
+deepface>=0.0.93
+tensorflow-cpu
+tf-keras
+retina-face        # RetinaFace detector — best angle coverage
+mtcnn              # MTCNN detector — fallback for varied angles
+
+# ── PII detection ───────────────────────────────────────────────────────────
+presidio-analyzer>=2.2.0
+presidio-anonymizer>=2.2.0
+spacy>=3.5.0
+phonenumbers>=8.13.0

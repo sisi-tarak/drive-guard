@@ -1,53 +1,72 @@
-from deepface import DeepFace
 from PIL import Image
 import numpy as np
-import tempfile
-import os
-from io import BytesIO
+
+_deepface = None
+
+def _get_deepface():
+    global _deepface
+    if _deepface is None:
+        from deepface import DeepFace
+        _deepface = DeepFace
+    return _deepface
+
+# ArcFace: state-of-the-art accuracy, robust to pose/lighting/expression changes
+# retinaface: detects faces at any angle including profile; mtcnn → opencv → skip as fallbacks
+_MODEL = "ArcFace"
+_DETECTORS = ("retinaface", "mtcnn", "opencv", "skip")
+
+# ArcFace cosine similarity threshold (lower = more permissive / higher recall)
+SIMILARITY_THRESHOLD = 0.65
+
 
 def get_face_embedding(image: Image.Image):
-    """Extract face embedding from an image"""
-    try:
-        # Convert PIL image to numpy array
-        img_array = np.array(image)
-        
-        # Get face embedding using DeepFace
-        embedding_obj = DeepFace.represent(
-            img_path=img_array,
-            model_name="Facenet",
-            enforce_detection=False
-        )
-        
-        if embedding_obj and len(embedding_obj) > 0:
-            return embedding_obj[0]["embedding"]
-        return None
-        
-    except Exception as e:
-        print(f"Face embedding error: {e}")
-        return None
+    """
+    Extract a 512-dim ArcFace embedding from the most prominent face in the image.
+    Returns None only if every detector backend fails entirely.
+    """
+    DeepFace = _get_deepface()
+    # PIL → RGB; DeepFace/OpenCV expects BGR
+    img_array = np.array(image)[:, :, ::-1].copy()
 
-def compare_faces(embedding1: list, embedding2: list):
-    """Compare two face embeddings and return similarity score"""
+    for detector in _DETECTORS:
+        try:
+            results = DeepFace.represent(
+                img_path=img_array,
+                model_name=_MODEL,
+                enforce_detection=False,
+                detector_backend=detector,
+                align=True,          # align face before embedding (fixes head tilt)
+            )
+            if not results:
+                continue
+            # When multiple faces are detected, use the one with highest confidence
+            best = max(results, key=lambda r: r.get("face_confidence", 0))
+            return best["embedding"]
+        except Exception as e:
+            print(f"Face embedding ({detector}): {e}")
+            continue
+
+    return None
+
+
+def compare_faces(e1: list, e2: list) -> float:
+    """Cosine similarity between two face embeddings. Range: -1 to 1 (higher = more similar)."""
     try:
-        import numpy as np
-        e1 = np.array(embedding1)
-        e2 = np.array(embedding2)
-        
-        # Cosine similarity
-        similarity = np.dot(e1, e2) / (np.linalg.norm(e1) * np.linalg.norm(e2))
-        return float(similarity)
-    except Exception as e:
-        print(f"Face comparison error: {e}")
+        a, b = np.array(e1), np.array(e2)
+        return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))
+    except Exception:
         return 0.0
 
-def has_face(image: Image.Image):
-    """Check if image contains a face"""
+
+def has_face(image: Image.Image) -> bool:
     try:
-        img_array = np.array(image)
+        DeepFace = _get_deepface()
+        img_array = np.array(image)[:, :, ::-1].copy()
         faces = DeepFace.extract_faces(
             img_path=img_array,
-            enforce_detection=True
+            enforce_detection=True,
+            detector_backend="retinaface",
         )
         return len(faces) > 0
-    except:
+    except Exception:
         return False

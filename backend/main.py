@@ -1,6 +1,17 @@
 import sys
 import os
+
+# Suppress TensorFlow/oneDNN verbose logs before any import loads TF
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
+os.environ.setdefault("TF_ENABLE_ONEDNN_OPTS", "0")
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# On Railway/cloud: write credentials.json from the GOOGLE_CREDENTIALS_JSON env var
+_creds_json_env = os.getenv("GOOGLE_CREDENTIALS_JSON")
+if _creds_json_env and not os.path.exists("credentials.json"):
+    with open("credentials.json", "w") as _f:
+        _f.write(_creds_json_env)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
