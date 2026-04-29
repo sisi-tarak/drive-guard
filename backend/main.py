@@ -26,10 +26,13 @@ app = FastAPI(title="DriveGuard API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://drive-guard-blue.vercel.app",
+        "http://localhost:5173"
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_credentials=True,
 )
 
 app.include_router(auth_router, prefix="/api")
